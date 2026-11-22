@@ -1,0 +1,17 @@
+{
+  "name": "GESTIONNAIRE BRIGADE 4",
+  "short_name": "BRIGADE 4",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#101010",
+  "theme_color": "#101010",
+  "description": "Gestion des cotisations et dépenses de Brigade 4",
+  "icons": [
+    {
+      "src": "assets/embleme.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

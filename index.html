@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101010">
+  <meta name="description" content="Gestion des cotisations et dépenses de Brigade 4">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/embleme.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <title>GESTIONNAIRE BRIGADE 4</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="assets/embleme.svg" alt="Emblème Brigade 4">
+      <div><strong>GESTIONNAIRE</strong><span>BRIGADE 4</span></div>
+    </div>
+    <button id="logoutBtn" class="ghost hidden">Déconnexion</button>
+  </header>
+
+  <main>
+    <section id="authView" class="auth-wrap">
+      <div class="hero">
+        <div class="crest"><img src="assets/embleme.svg" alt=""></div>
+        <p class="eyebrow">DISCIPLINE · TRANSPARENCE · SOLIDARITÉ</p>
+        <h1>La gestion en toute confiance.</h1>
+        <p class="muted">Suivi des membres, cotisations et dépenses de Brigade 4.</p>
+      </div>
+      <form id="loginForm" class="panel">
+        <h2>Connexion</h2>
+        <label>Adresse e-mail<input id="email" type="email" autocomplete="username" required placeholder="nom@exemple.com"></label>
+        <label>Mot de passe<input id="password" type="password" autocomplete="current-password" required placeholder="Votre mot de passe"></label>
+        <button class="primary" type="submit">Se connecter</button>
+        <p id="authMessage" class="message" aria-live="polite"></p>
+        <p class="hint">Les comptes des membres sont créés par l'administrateur dans Firebase Authentication. Cette première version ne propose pas d'inscription publique.</p>
+      </form>
+    </section>
+
+    <section id="appView" class="hidden">
+      <div class="welcome">
+        <div><p class="eyebrow">ESPACE DE GESTION</p><h1>Tableau de bord</h1><p id="userRole" class="muted">Chargement du profil…</p></div>
+        <div class="date-chip" id="today"></div>
+      </div>
+      <div class="stats">
+        <article class="stat"><span>Solde disponible</span><strong id="balance">— FCFA</strong></article>
+        <article class="stat"><span>Total cotisations</span><strong id="contributions">— FCFA</strong></article>
+        <article class="stat"><span>Total dépenses</span><strong id="expenses">— FCFA</strong></article>
+      </div>
+      <nav class="tabs" aria-label="Rubriques">
+        <button class="tab active" data-tab="members">Membres</button>
+        <button class="tab" data-tab="contributionsTab">Cotisations</button>
+        <button class="tab" data-tab="expensesTab">Dépenses</button>
+      </nav>
+
+      <section id="members" class="panel tab-panel">
+        <div class="section-head"><div><p class="eyebrow">RÉPERTOIRE</p><h2>Membres</h2></div><span class="count" id="memberCount">0</span></div>
+        <form id="memberForm" class="entry-form admin-only">
+          <input id="memberName" placeholder="Nom et prénom du membre" required>
+          <input id="memberPhone" placeholder="Téléphone (facultatif)">
+          <button class="primary" type="submit">Ajouter</button>
+        </form>
+        <div id="memberList" class="records"><p class="muted">Aucun membre enregistré.</p></div>
+      </section>
+
+      <section id="contributionsTab" class="panel tab-panel hidden">
+        <div class="section-head"><div><p class="eyebrow">ENTRÉES</p><h2>Cotisations</h2></div></div>
+        <form id="contributionForm" class="entry-form admin-only">
+          <input id="contributionMember" placeholder="Nom du membre" required>
+          <input id="contributionAmount" type="number" min="1" placeholder="Montant FCFA" required>
+          <input id="contributionReason" placeholder="Motif / période">
+          <button class="primary" type="submit">Enregistrer</button>
+        </form>
+        <div id="contributionList" class="records"><p class="muted">Aucune cotisation enregistrée.</p></div>
+      </section>
+
+      <section id="expensesTab" class="panel tab-panel hidden">
+        <div class="section-head"><div><p class="eyebrow">SORTIES</p><h2>Dépenses</h2></div></div>
+        <form id="expenseForm" class="entry-form admin-only">
+          <input id="expenseLabel" placeholder="Désignation de la dépense" required>
+          <input id="expenseAmount" type="number" min="1" placeholder="Montant FCFA" required>
+          <input id="expenseDate" type="date" required>
+          <button class="primary" type="submit">Enregistrer</button>
+        </form>
+        <div id="expenseList" class="records"><p class="muted">Aucune dépense enregistrée.</p></div>
+      </section>
+      <p class="footer-note">GESTIONNAIRE BRIGADE 4 · Version initiale</p>
+    </section>
+  </main>
+  <div id="toast" role="status" class="toast"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
