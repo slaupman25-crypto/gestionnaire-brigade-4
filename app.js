@@ -149,6 +149,73 @@ function renderMembers() {
     box.append(el);
   });
 }
+
+async function editContribution(x) {
+  const membre = prompt("Nom du membre :", x.membre || "");
+  if (membre === null || !membre.trim()) return;
+  const montant = prompt("Nouveau montant :", x.montant || "");
+  if (montant === null || !Number.isFinite(Number(montant)) || Number(montant) <= 0) return;
+  const motif = prompt("Motif :", x.motif || "");
+  if (motif === null) return;
+  try {
+    await updateDoc(doc(db, "cotisations", x.id), {
+      membre: membre.trim(),
+      montant: Number(montant),
+      motif: motif.trim()
+    });
+    toast("Cotisation modifiée.");
+    await refresh();
+  } catch (err) {
+    console.error(err);
+    toast("Erreur lors de la modification.");
+  }
+}
+
+async function removeContribution(x) {
+  if (!confirm("Confirmer la suppression de cette cotisation ?")) return;
+  try {
+    await deleteDoc(doc(db, "cotisations", x.id));
+    toast("Cotisation supprimée.");
+    await refresh();
+  } catch (err) {
+    console.error(err);
+    toast("Erreur lors de la suppression.");
+  }
+}
+
+async function editExpense(x) {
+  const designation = prompt("Motif de la dépense :", x.designation || "");
+  if (designation === null || !designation.trim()) return;
+  const montant = prompt("Nouveau montant :", x.montant || "");
+  if (montant === null || !Number.isFinite(Number(montant)) || Number(montant) <= 0) return;
+  const date = prompt("Date (AAAA-MM-JJ) :", x.date || "");
+  if (date === null) return;
+  try {
+    await updateDoc(doc(db, "depenses", x.id), {
+      designation: designation.trim(),
+      montant: Number(montant),
+      date: date.trim()
+    });
+    toast("Dépense modifiée.");
+    await refresh();
+  } catch (err) {
+    console.error(err);
+    toast("Erreur lors de la modification.");
+  }
+}
+
+async function removeExpense(x) {
+  if (!confirm("Confirmer la suppression de cette dépense ?")) return;
+  try {
+    await deleteDoc(doc(db, "depenses", x.id));
+    toast("Dépense supprimée.");
+    await refresh();
+  } catch (err) {
+    console.error(err);
+    toast("Erreur lors de la suppression.");
+  }
+}
+
 async function save(collectionName,data){try{await addDoc(collection(db,collectionName),{...data,createdAt:serverTimestamp()});toast('Enregistrement effectué.');await refresh()}catch(err){console.error(err);toast('Enregistrement refusé. Vérifiez les droits administrateur.')}}
 $('memberForm').addEventListener('submit',async e=>{e.preventDefault();await save('membres',{nom:$('memberName').value.trim(),telephone:$('memberPhone').value.trim()});e.target.reset()});
 $('contributionForm').addEventListener('submit',async e=>{e.preventDefault();await save('cotisations',{membre:$('contributionMember').value.trim(),montant:Number($('contributionAmount').value),motif:$('contributionReason').value.trim()});e.target.reset()});
