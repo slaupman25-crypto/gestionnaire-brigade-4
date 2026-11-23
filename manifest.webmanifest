@@ -8,7 +8,7 @@
   "description": "Gestion des cotisations et dépenses de Brigade 4",
   "icons": [
     {
-      "src": "assets/embleme.svg",
+      "src": "embleme.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
