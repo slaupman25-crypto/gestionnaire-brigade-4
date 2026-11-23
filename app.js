@@ -1,6 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 // Configuration du projet Firebase Brigade 4
 const firebaseConfig = {
@@ -28,13 +26,62 @@ document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>
 
 async function listDocs(name){const snap=await getDocs(query(collection(db,name),orderBy('createdAt','desc'))).catch(async()=>await getDocs(collection(db,name)));return snap.docs.map(d=>({id:d.id,...d.data()}));}
 function record(title,sub,right){const el=document.createElement('div');el.className='record';const a=document.createElement('div'),b=document.createElement('div');a.textContent=title;const sm=document.createElement('small');sm.textContent=sub||'';a.append(sm);b.className='amount';b.textContent=right||'';el.append(a,b);return el}
+async function editMember(member) {
+  const nom = prompt("Nouveau nom :", member.nom || "");
+  if (nom === null || !nom.trim()) return;
+
+  const telephone = prompt("Nouveau téléphone :", member.telephone || "");
+  if (telephone === null) return;
+
+  try {
+    await updateDoc(doc(db, "membres", member.id), {
+      nom: nom.trim(),
+      telephone: telephone.trim()
+    });
+    toast("Membre modifié avec succès.");
+    await refresh();
+  } catch (err) {
+    console.error(err);
+    toast("Erreur lors de la modification.");
+  }
+}
+async function removeMember(member) {
+  if (!confirm("Supprimer " + member.nom + " ? Les anciennes cotisations seront conservées.")) return;
+
+  try {
+    await deleteDoc(doc(db, "membres", member.id));
+    toast("Membre supprimé.");
+    await refresh();
+  } catch (err) {
+    console.error(err);
+    toast("Erreur lors de la suppression.");
+  }
+}
 async function refresh(){
  try{
   const [members,contribs,expenses]=await Promise.all([listDocs('membres'),listDocs('cotisations'),listDocs('depenses')]);
   const totalC=contribs.reduce((s,x)=>s+(Number(x.montant)||0),0),totalE=expenses.reduce((s,x)=>s+(Number(x.montant)||0),0);
   $('balance').textContent=money(totalC-totalE);$('contributions').textContent=money(totalC);$('expenses').textContent=money(totalE);$('memberCount').textContent=members.length;
   const fill=(id,items,mapper,empty)=>{const box=$(id);box.replaceChildren();if(!items.length){const p=document.createElement('p');p.className='muted';p.textContent=empty;box.append(p)}else items.forEach(x=>box.append(mapper(x)))};
-  fill('memberList',members,x=>record(x.nom||'Membre',x.telephone||'Membre Brigade 4',''), 'Aucun membre enregistré.');
+  fill('memberList', members, x => {
+  const el = record(x.nom || 'Membre', x.telephone || 'Membre Brigade 4', '');
+  if (auth.currentUser.uid === ADMIN_UID) {
+    const actions = document.createElement('div');
+    actions.className = 'member-actions';
+
+    const edit = document.createElement('button');
+    edit.textContent = 'Modifier';
+    edit.onclick = () => editMember(x);
+
+    const del = document.createElement('button');
+    del.textContent = 'Supprimer';
+    del.onclick = () => removeMember(x);
+
+    actions.append(edit, del);
+    el.append(actions);
+  }
+  return el;
+}, 'Aucun membre enregistré.');
   fill('contributionList',contribs,x=>record(x.membre||'Membre',x.motif||'Cotisation',money(x.montant)), 'Aucune cotisation enregistrée.');
   fill('expenseList',expenses,x=>record(x.designation||'Dépense',x.date||'',money(x.montant)), 'Aucune dépense enregistrée.');
  }catch(err){console.error(err);toast('Lecture impossible : vérifiez les règles Firestore.')}
