@@ -14,6 +14,7 @@ const firebaseConfig = {
 const ADMIN_UID = "RkaGapmTtiSdUOfO61DMNBMOs4q2";
 const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getFirestore(app);
 const $ = id => document.getElementById(id);
+let cachedMembers = [];
 const money = n => new Intl.NumberFormat('fr-FR').format(Number(n)||0) + ' FCFA';
 const dateNow = new Date();
 $('today').textContent = dateNow.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
@@ -62,10 +63,11 @@ async function removeMember(member) {
 async function refresh(){
  try{
   const [members,contribs,expenses]=await Promise.all([listDocs('membres'),listDocs('cotisations'),listDocs('depenses')]);
+   cachedMembers = members;
   const totalC=contribs.reduce((s,x)=>s+(Number(x.montant)||0),0),totalE=expenses.reduce((s,x)=>s+(Number(x.montant)||0),0);
   $('balance').textContent=money(totalC-totalE);$('contributions').textContent=money(totalC);$('expenses').textContent=money(totalE);$('memberCount').textContent=members.length;
   const fill=(id,items,mapper,empty)=>{const box=$(id);box.replaceChildren();if(!items.length){const p=document.createElement('p');p.className='muted';p.textContent=empty;box.append(p)}else items.forEach(x=>box.append(mapper(x)))};
-  fill('memberList', members, x => {
+  
   const el = record(x.nom || 'Membre', x.telephone || 'Membre Brigade 4', '');
   if (auth.currentUser.uid === ADMIN_UID) {
     const actions = document.createElement('div');
@@ -74,16 +76,44 @@ async function refresh(){
     const edit = document.createElement('button');
     edit.textContent = 'Modifier';
     edit.onclick = () => editMember(x);
+  const term = ($('memberSearch')?.value || '').trim().toLowerCase();
 
-    const del = document.createElement('button');
-    del.textContent = 'Supprimer';
-    del.onclick = () => removeMember(x);
+  const filteredMembers = cachedMembers.filter(x =>
+    (x.nom || '').toLowerCase().includes(term) ||
+    (x.telephone || '').toLowerCase().includes(term)
+  );
 
-    actions.append(edit, del);
-    el.append(actions);
+  const memberBox = $('memberList');
+  memberBox.replaceChildren();
+
+  if (!filteredMembers.length) {
+    const p = document.createElement('p');
+    p.className = 'muted';
+    p.textContent = term ? 'Aucun membre trouvé.' : 'Aucun membre enregistré.';
+    memberBox.append(p);
+  } else {
+    filteredMembers.forEach(x => {
+      const el = record(x.nom || 'Membre', x.telephone || 'Membre Brigade 4', '');
+
+      if (auth.currentUser && auth.currentUser.uid === ADMIN_UID) {
+        const actions = document.createElement('div');
+        actions.className = 'member-actions';
+
+        const edit = document.createElement('button');
+        edit.textContent = 'Modifier';
+        edit.onclick = () => editMember(x);
+
+        const del = document.createElement('button');
+        del.textContent = 'Supprimer';
+        del.onclick = () => removeMember(x);
+
+        actions.append(edit, del);
+        el.append(actions);
+      }
+
+      memberBox.append(el);
+    });
   }
-  return el;
-}, 'Aucun membre enregistré.');
   fill('contributionList',contribs,x=>record(x.membre||'Membre',x.motif||'Cotisation',money(x.montant)), 'Aucune cotisation enregistrée.');
   fill('expenseList',expenses,x=>record(x.designation||'Dépense',x.date||'',money(x.montant)), 'Aucune dépense enregistrée.');
  }catch(err){console.error(err);toast('Lecture impossible : vérifiez les règles Firestore.')}
@@ -92,4 +122,40 @@ async function save(collectionName,data){try{await addDoc(collection(db,collecti
 $('memberForm').addEventListener('submit',async e=>{e.preventDefault();await save('membres',{nom:$('memberName').value.trim(),telephone:$('memberPhone').value.trim()});e.target.reset()});
 $('contributionForm').addEventListener('submit',async e=>{e.preventDefault();await save('cotisations',{membre:$('contributionMember').value.trim(),montant:Number($('contributionAmount').value),motif:$('contributionReason').value.trim()});e.target.reset()});
 $('expenseForm').addEventListener('submit',async e=>{e.preventDefault();await save('depenses',{designation:$('expenseLabel').value.trim(),montant:Number($('expenseAmount').value),date:$('expenseDate').value});e.target.reset();$('expenseDate').value=dateNow.toISOString().slice(0,10)});
+$('memberSearch').addEventListener('input', () => {
+  const term = ($('memberSearch').value || '').trim().toLowerCase();
+
+  const filteredMembers = cachedMembers.filter(x =>
+    (x.nom || '').toLowerCase().includes(term) ||
+    (x.telephone || '').toLowerCase().includes(term)
+  );
+
+  const memberBox = $('memberList');
+  memberBox.replaceChildren();
+
+  if (!filteredMembers.length) {
+    const p = document.createElement('p');
+    p.className = 'muted';
+    p.textContent = 'Aucun membre trouvé.';
+    memberBox.append(p);
+    return;
+  }
+
+  filteredMembers.forEach(x => {
+    const el = record(x.nom || 'Membre', x.telephone || 'Membre Brigade 4', '');
+    if (auth.currentUser && auth.currentUser.uid === ADMIN_UID) {
+      const actions = document.createElement('div');
+      actions.className = 'member-actions';
+      const edit = document.createElement('button');
+      edit.textContent = 'Modifier';
+      edit.onclick = () => editMember(x);
+      const del = document.createElement('button');
+      del.textContent = 'Supprimer';
+      del.onclick = () => removeMember(x);
+      actions.append(edit, del);
+      el.append(actions);
+    }
+    memberBox.append(el);
+  });
+});
 onAuthStateChanged(auth,async user=>{if(user){showApp(user);await refresh()}else showAuth()});
